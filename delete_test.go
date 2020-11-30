@@ -33,7 +33,7 @@ func TestDelete(t *testing.T) {
 				DeleteWhere(NotEqual(NewIdent("role", "u"), Arg("role", "test"))),
 			},
 			Table: "users",
-			Want:  "DELETE FROM users AS u WHERE u.role <> @role",
+			Want:  "DELETE FROM users AS u WHERE u.role <> ?",
 			Args:  []interface{}{"test"},
 		},
 		{
@@ -41,7 +41,7 @@ func TestDelete(t *testing.T) {
 				DeleteWhere(And(GreaterOrEqual(NewIdent("conn"), query), NotEqual(NewIdent("role"), Arg("role", "test")))),
 			},
 			Table: "users",
-			Want:  "DELETE FROM users WHERE conn >= (SELECT AVG(conn) FROM users GROUP BY id) AND role <> @role",
+			Want:  "DELETE FROM users WHERE conn >= (SELECT AVG(conn) FROM users GROUP BY id) AND role <> ?",
 			Args:  []interface{}{"test"},
 		},
 	}

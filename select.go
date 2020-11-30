@@ -191,9 +191,9 @@ func (s Select) RightOuterJoin(source, cdt SQLer, options ...SelectOption) (Sele
 }
 
 func (s Select) join(jt jointype, source, cdt SQLer, options ...SelectOption) (Select, error) {
-  if !isJoinable(source) {
-    return s, fmt.Errorf("%w: source can not be joined!", ErrSyntax)
-  }
+	if !isJoinable(source) {
+		return s, fmt.Errorf("%w: source can not be joined!", ErrSyntax)
+	}
 	if cdt != nil {
 		switch cdt.(type) {
 		case compare, and, or, list:
@@ -233,9 +233,9 @@ func (s Select) SQL() (string, []interface{}, error) {
 			b.WriteString("*")
 			continue
 		}
-    if i > 0 {
-      b.WriteString(", ")
-    }
+		if i > 0 {
+			b.WriteString(", ")
+		}
 		as, err := writeSQL(&b, q.columns...)
 		if err != nil {
 			return "", nil, err

@@ -178,7 +178,8 @@ func (a arg) SQL() (string, []interface{}, error) {
 	if a.value == nil {
 		a.value = null
 	}
-	return fmt.Sprintf("@%s", a.name), []interface{}{a.value}, nil
+	// return fmt.Sprintf("@%s", a.name), []interface{}{a.value}, nil
+	return "?", []interface{}{a.value}, nil
 }
 
 func writeSQL(b io.StringWriter, parts ...SQLer) ([]interface{}, error) {
@@ -190,6 +191,9 @@ func writeSQL(b io.StringWriter, parts ...SQLer) ([]interface{}, error) {
 		sql, as, err := s.SQL()
 		if err != nil {
 			return nil, err
+		}
+		if _, ok := s.(Select); ok {
+			sql = fmt.Sprintf("(%s)", sql)
 		}
 		b.WriteString(sql)
 		args = append(args, as...)

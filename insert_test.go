@@ -33,7 +33,7 @@ func TestInsert(t *testing.T) {
 				InsertValues(Arg("first", "pierre"), Arg("last", "dubois")),
 			},
 			Table: "users",
-			Want:  "INSERT INTO users(first, last) VALUES ('roger', 'lamotte'), (@first, @last)",
+			Want:  "INSERT INTO users(first, last) VALUES ('roger', 'lamotte'), (?, ?)",
 			Args:  []interface{}{"pierre", "dubois"},
 		},
 	}

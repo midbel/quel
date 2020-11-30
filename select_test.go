@@ -7,11 +7,11 @@ import (
 func TestSelect(t *testing.T) {
 	t.Run("simple", testSimpleSelect)
 	t.Run("join", testJoinSelect)
-  t.Run("subquery", testSubquerySelect)
+	t.Run("subquery", testSubquerySelect)
 }
 
 func testSubquerySelect(t *testing.T) {
-  t.SkipNow()
+	t.SkipNow()
 }
 
 func testJoinSelect(t *testing.T) {
@@ -98,7 +98,7 @@ func testSimpleSelect(t *testing.T) {
 				SelectWhere(Equal(NewIdent("role"), Arg("role", "admin"))),
 			},
 			Table: "users",
-			Want:  "SELECT u.id, u.first, u.last FROM users AS u WHERE role = @role ORDER BY first ASC, last ASC",
+			Want:  "SELECT u.id, u.first, u.last FROM users AS u WHERE role = ? ORDER BY first ASC, last ASC",
 			Args:  []interface{}{"admin"},
 		},
 		{

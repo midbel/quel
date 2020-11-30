@@ -25,7 +25,7 @@ func TestUpdate(t *testing.T) {
 				UpdateWhere(Equal(NewIdent("active"), Arg("active", 0))),
 			},
 			Table: "users",
-			Want:  "UPDATE users SET role = 'test', active = 1 WHERE active = @active",
+			Want:  "UPDATE users SET role = 'test', active = 1 WHERE active = ?",
 			Args:  []interface{}{0},
 		},
 	}

@@ -17,21 +17,41 @@ func Func(name string, args ...SQLer) SQLer {
 }
 
 func (f function) SQL() (string, []interface{}, error) {
-	var b strings.Builder
+	var (
+		b    strings.Builder
+		args []interface{}
+	)
 	b.WriteString(f.name)
 	b.WriteString("(")
-	var args []interface{}
-	for i := range f.args {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		sql, as, err := f.args[i].SQL()
-		if err != nil {
-			return "", nil, err
-		}
-		b.WriteString(sql)
-		args = append(args, as...)
+	as, err := writeSQL(&b, f.args...)
+	if err != nil {
+		return "", nil, err
 	}
+	args = append(args, as...)
 	b.WriteString(")")
 	return b.String(), args, nil
+}
+
+func Count(ident SQLer) SQLer {
+	return Func("COUNT", ident)
+}
+
+func Coalesce(values ...SQLer) SQLer {
+	return Func("COALESCE", values...)
+}
+
+func Now() SQLer {
+	return Func("NOW")
+}
+
+func If(csq, alt SQLer) SQLer {
+	return Func("IF", csq, alt)
+}
+
+func Min(column SQLer) SQLer {
+	return Func("MIN", column)
+}
+
+func Max(column SQLer) SQLer {
+	return Func("MAX", column)
 }
