@@ -55,6 +55,9 @@ type alias struct {
 }
 
 func Alias(name string, sql SQLer) SQLer {
+	if _, ok := sql.(alias); ok {
+		return sql
+	}
 	return alias{
 		SQLer: sql,
 		name:  name,

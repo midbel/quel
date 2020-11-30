@@ -6,26 +6,6 @@ import (
 
 type InsertOption func(*Insert) error
 
-type Insert struct {
-	table   string
-	columns []SQLer
-	values  [][]SQLer
-}
-
-func NewInsert(table string, options ...InsertOption) (Insert, error) {
-	var (
-		i   Insert
-		err error
-	)
-	i.table = table
-	for _, opt := range options {
-		if err = opt(&i); err != nil {
-			break
-		}
-	}
-	return i, err
-}
-
 func InsertColumns(columns ...string) InsertOption {
 	return func(i *Insert) error {
 		for _, c := range columns {
@@ -40,6 +20,26 @@ func InsertValues(values ...SQLer) InsertOption {
 		i.values = append(i.values, values)
 		return nil
 	}
+}
+
+type Insert struct {
+	table   SQLer
+	columns []SQLer
+	values  [][]SQLer
+}
+
+func NewInsert(table string, options ...InsertOption) (Insert, error) {
+	var (
+		i   Insert
+		err error
+	)
+	i.table = NewIdent(table)
+	for _, opt := range options {
+		if err = opt(&i); err != nil {
+			break
+		}
+	}
+	return i, err
 }
 
 func (i Insert) SQL() (string, []interface{}, error) {

@@ -56,6 +56,9 @@ func SelectColumn(sql SQLer) SelectOption {
 
 func SelectAlias(name string) SelectOption {
 	return func(q *Select) error {
+		if !isValidIdentifier(name) {
+			return fmt.Errorf("alias: %w %q", ErrIdent, name)
+		}
 		q.queries[0].table = Alias(name, q.queries[0].table)
 		return nil
 	}
@@ -88,9 +91,13 @@ func SelectGroupBy(columns ...string) SelectOption {
 
 func SelectWhere(where SQLer) SelectOption {
 	return func(q *Select) error {
-		if where != nil {
-			q.where = where
+		if where == nil {
+			return nil
 		}
+		if !acceptRelational(where) {
+			return fmt.Errorf("where: %w", ErrSyntax)
+		}
+		q.where = where
 		return nil
 	}
 }
