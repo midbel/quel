@@ -191,6 +191,9 @@ func (s Select) RightOuterJoin(source, cdt SQLer, options ...SelectOption) (Sele
 }
 
 func (s Select) join(jt jointype, source, cdt SQLer, options ...SelectOption) (Select, error) {
+  if !isJoinable(source) {
+    return s, fmt.Errorf("%w: source can not be joined!", ErrSyntax)
+  }
 	if cdt != nil {
 		switch cdt.(type) {
 		case compare, and, or, list:
@@ -228,18 +231,16 @@ func (s Select) SQL() (string, []interface{}, error) {
 	for i, q := range s.queries {
 		if len(q.columns) == 0 {
 			b.WriteString("*")
+			continue
 		}
-		for j, c := range q.columns {
-			if i > 0 || j > 0 {
-				b.WriteString(", ")
-			}
-			sql, as, err := c.SQL()
-			if err != nil {
-				return "", nil, err
-			}
-			args = append(args, as...)
-			b.WriteString(sql)
+    if i > 0 {
+      b.WriteString(", ")
+    }
+		as, err := writeSQL(&b, q.columns...)
+		if err != nil {
+			return "", nil, err
 		}
+		args = append(args, as...)
 	}
 	b.WriteString(" FROM ")
 	for i, q := range s.queries {
@@ -254,25 +255,24 @@ func (s Select) SQL() (string, []interface{}, error) {
 		}
 		args = append(args, as...)
 		b.WriteString(sql)
-		switch q.cdt.(type) {
-		case and, or, compare:
-			b.WriteString(" ON ")
-			sql, as, err := q.cdt.SQL()
+
+		if q.join != none {
+			sql, as, err = q.cdt.SQL()
 			if err != nil {
 				return "", nil, err
 			}
 			args = append(args, as...)
-			b.WriteString(sql)
-		case list:
-			b.WriteString(" USING (")
-			sql, as, err := q.cdt.SQL()
-			if err != nil {
-				return "", nil, err
+			switch q.cdt.(type) {
+			case and, or, compare:
+				b.WriteString(" ON ")
+				b.WriteString(sql)
+			case list:
+				b.WriteString(" USING (")
+				b.WriteString(sql)
+				b.WriteString(")")
+			default:
+				return "", nil, fmt.Errorf("join: %w", ErrSyntax)
 			}
-			args = append(args, as...)
-			b.WriteString(sql)
-			b.WriteString(")")
-		default:
 		}
 	}
 	if s.where != nil {
@@ -286,17 +286,11 @@ func (s Select) SQL() (string, []interface{}, error) {
 	}
 	if len(s.groupby) > 0 {
 		b.WriteString(" GROUP BY ")
-		for i, by := range s.groupby {
-			if i > 0 {
-				b.WriteString(", ")
-			}
-			sql, as, err := by.SQL()
-			if err != nil {
-				return "", nil, err
-			}
-			args = append(args, as...)
-			b.WriteString(sql)
+		as, err := writeSQL(&b, s.groupby...)
+		if err != nil {
+			return "", nil, err
 		}
+		args = append(args, as...)
 		if s.having != nil {
 			b.WriteString(" HAVING ")
 			sql, as, err := s.having.SQL()
@@ -309,17 +303,11 @@ func (s Select) SQL() (string, []interface{}, error) {
 	}
 	if len(s.orderby) > 0 {
 		b.WriteString(" ORDER BY ")
-		for i, by := range s.orderby {
-			if i > 0 {
-				b.WriteString(", ")
-			}
-			sql, as, err := by.SQL()
-			if err != nil {
-				return "", nil, err
-			}
-			args = append(args, as...)
-			b.WriteString(sql)
+		as, err := writeSQL(&b, s.orderby...)
+		if err != nil {
+			return "", nil, err
 		}
+		args = append(args, as...)
 	}
 	if s.limit > 0 {
 		b.WriteString(" LIMIT ")
