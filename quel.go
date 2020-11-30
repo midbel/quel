@@ -3,6 +3,7 @@ package quel
 import (
 	"errors"
 	"fmt"
+  "io"
 	"sort"
 	"strconv"
 	"strings"
@@ -178,6 +179,22 @@ func (a arg) SQL() (string, []interface{}, error) {
 		a.value = null
 	}
 	return fmt.Sprintf("@%s", a.name), []interface{}{a.value}, nil
+}
+
+func writeSQL(b io.StringWriter, parts ...SQLer) ([]interface{}, error) {
+  var args []interface{}
+  for i, s := range parts {
+    if i > 0 {
+      b.WriteString(", ")
+    }
+    sql, as, err := s.SQL()
+    if err != nil {
+      return nil, err
+    }
+    b.WriteString(sql)
+    args = append(args, as...)
+  }
+  return args, nil
 }
 
 const (

@@ -53,9 +53,6 @@ func NewInsert(table string, options ...InsertOption) (Insert, error) {
 }
 
 func (i Insert) SQL() (string, []interface{}, error) {
-	if len(i.values) == 0 {
-		return "", nil, fmt.Errorf("insert: no values to be inserted")
-	}
 	var (
 		b    strings.Builder
 		args []interface{}
@@ -68,17 +65,11 @@ func (i Insert) SQL() (string, []interface{}, error) {
 	b.WriteString(sql)
 	if len(i.columns) > 0 {
 		b.WriteString("(")
-		for j := range i.columns {
-			if j > 0 {
-				b.WriteString(", ")
-			}
-			sql, as, err := i.columns[j].SQL()
-			if err != nil {
-				return "", nil, err
-			}
-			b.WriteString(sql)
-			args = append(args, as...)
+		as, err := writeSQL(&b, i.columns...)
+		if err != nil {
+			return "", nil, err
 		}
+		args = append(args, as...)
 		b.WriteString(")")
 	}
 	b.WriteString(" VALUES ")
@@ -90,17 +81,11 @@ func (i Insert) SQL() (string, []interface{}, error) {
 			b.WriteString(", ")
 		}
 		b.WriteString("(")
-		for j := range vs {
-			if j > 0 {
-				b.WriteString(", ")
-			}
-			sql, as, err := vs[j].SQL()
-			if err != nil {
-				return "", nil, err
-			}
-			b.WriteString(sql)
-			args = append(args, as...)
+		as, err := writeSQL(&b, vs...)
+		if err != nil {
+			return "", nil, err
 		}
+		args = append(args, as...)
 		b.WriteString(")")
 	}
 	return b.String(), args, nil

@@ -75,17 +75,11 @@ func (u Update) SQL() (string, []interface{}, error) {
 	}
 	b.WriteString(sql)
 	b.WriteString(" SET ")
-	for i, col := range u.columns {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		sql, as, err := col.SQL()
-		if err != nil {
-			return "", nil, err
-		}
-		args = append(args, as...)
-		b.WriteString(sql)
-	}
+  as, err := writeSQL(&b, u.columns...)
+  if err != nil {
+    return "", nil, err
+  }
+  args = append(args, as...)
 	if u.where != nil {
 		b.WriteString(" WHERE ")
 		sql, as, err := u.where.SQL()
