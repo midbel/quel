@@ -2,6 +2,8 @@ package quel
 
 import (
 	"errors"
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"

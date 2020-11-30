@@ -11,7 +11,7 @@ type SelectOption func(q *Select) error
 func SelectLimit(limit int) SelectOption {
 	return func(q *Select) error {
 		if limit <= 0 {
-			return fmt.Errorf("limit: %w: %s", ErrLimit, limit)
+			return fmt.Errorf("limit: %w: %d", ErrLimit, limit)
 		}
 		q.limit = limit
 		return nil
@@ -21,7 +21,7 @@ func SelectLimit(limit int) SelectOption {
 func SelectOffset(offset int) SelectOption {
 	return func(q *Select) error {
 		if offset <= 0 {
-			return fmt.Errorf("offset: %w: %s", ErrLimit, offset)
+			return fmt.Errorf("offset: %w: %d", ErrLimit, offset)
 		}
 		q.offset = offset
 		return nil
@@ -87,7 +87,7 @@ func SelectGroupBy(columns ...SQLer) SelectOption {
 
 func SelectHaving(having SQLer) SelectOption {
 	return func(q *Select) error {
-    if having == nil {
+		if having == nil {
 			return nil
 		}
 		if !acceptRelational(having) {
@@ -149,10 +149,10 @@ func isJoinable(sql SQLer) bool {
 
 type Select struct {
 	queries []query
-  where   SQLer
+	where   SQLer
 	orderby []SQLer
 	groupby []SQLer
-  having   SQLer
+	having  SQLer
 	limit   int
 	offset  int
 }
@@ -297,15 +297,15 @@ func (s Select) SQL() (string, []interface{}, error) {
 			args = append(args, as...)
 			b.WriteString(sql)
 		}
-    if s.having != nil {
-      b.WriteString(" HAVING ")
-      sql, as, err := s.having.SQL()
-      if err != nil {
-        return "", nil, er
-      }
-      args = append(args, as...)
-      b.WriteString(sql)
-    }
+		if s.having != nil {
+			b.WriteString(" HAVING ")
+			sql, as, err := s.having.SQL()
+			if err != nil {
+				return "", nil, err
+			}
+			args = append(args, as...)
+			b.WriteString(sql)
+		}
 	}
 	if len(s.orderby) > 0 {
 		b.WriteString(" ORDER BY ")

@@ -1,5 +1,9 @@
 package quel
 
+import (
+	"fmt"
+)
+
 const (
 	add uint8 = iota
 	sub

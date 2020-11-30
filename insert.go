@@ -1,6 +1,7 @@
 package quel
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -51,7 +52,11 @@ func (i Insert) SQL() (string, []interface{}, error) {
 		args []interface{}
 	)
 	b.WriteString("INSERT INTO ")
-	b.WriteString(i.table)
+	sql, _, err := i.table.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	b.WriteString(sql)
 	if len(i.columns) > 0 {
 		b.WriteString("(")
 		for j := range i.columns {

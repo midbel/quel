@@ -2,6 +2,7 @@ package quel
 
 import (
 	"fmt"
+	"strings"
 )
 
 const (
@@ -129,11 +130,10 @@ func (c compare) SQL() (string, []interface{}, error) {
 		return "", nil, err
 	}
 
-	if c.op == in || c.op == notin {
-		if _, ok := c.right.(list); !ok {
-			return "", nil, ErrSyntax
-		}
+	switch c.right.(type) {
+	case list, Select:
 		right = fmt.Sprintf("(%s)", right)
+	default:
 	}
 
 	args = append(args, as...)

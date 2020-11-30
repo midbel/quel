@@ -31,8 +31,8 @@ func UpdateWhere(where SQLer) UpdateOption {
 
 func UpdateAlias(alias string) UpdateOption {
 	return func(u *Update) error {
-		if !isValidIdentifier(name) {
-			return fmt.Errorf("alias: %w %q", ErrIdent, name)
+		if !isValidIdentifier(alias) {
+			return fmt.Errorf("alias: %w %q", ErrIdent, alias)
 		}
 		u.table = Alias(alias, u.table)
 		return nil
@@ -65,7 +65,7 @@ func (u Update) SQL() (string, []interface{}, error) {
 		args []interface{}
 	)
 	b.WriteString("UPDATE ")
-	sql, as, err := u.table.SQL()
+	sql, _, err := u.table.SQL()
 	if err != nil {
 		return "", nil, err
 	}

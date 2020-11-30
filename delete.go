@@ -61,7 +61,8 @@ func (d Delete) SQL() (string, []interface{}, error) {
 	}
 	args = append(args, as...)
 	b.WriteString(sql)
-	if b.where != nil {
+	if d.where != nil {
+		b.WriteString(" WHERE ")
 		sql, as, err := d.where.SQL()
 		if err != nil {
 			return "", nil, err
