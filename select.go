@@ -2,6 +2,7 @@ package quel
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -77,14 +78,22 @@ func SelectOrderBy(by ...SQLer) SelectOption {
 	}
 }
 
-func SelectGroupBy(columns ...string) SelectOption {
+func SelectGroupBy(columns ...SQLer) SelectOption {
 	return func(q *Select) error {
-		for i := range columns {
-			if !isValidIdentifier(columns[i]) {
-				return fmt.Errorf("GROUP BY: %w %q", ErrIdent, columns[i])
-			}
-		}
 		q.groupby = append(q.groupby, columns...)
+		return nil
+	}
+}
+
+func SelectHaving(having SQLer) SelectOption {
+	return func(q *Select) error {
+    if having == nil {
+			return nil
+		}
+		if !acceptRelational(having) {
+			return fmt.Errorf("having: %w", ErrSyntax)
+		}
+		q.having = having
 		return nil
 	}
 }
@@ -140,11 +149,12 @@ func isJoinable(sql SQLer) bool {
 
 type Select struct {
 	queries []query
+  where   SQLer
 	orderby []SQLer
-	groupby []string
+	groupby []SQLer
+  having   SQLer
 	limit   int
 	offset  int
-	where   SQLer
 }
 
 func NewSelect(table string, options ...SelectOption) (Select, error) {
@@ -274,23 +284,52 @@ func (s Select) SQL() (string, []interface{}, error) {
 		b.WriteString(sql)
 		args = append(args, as...)
 	}
-	return b.String(), args, nil
-}
-
-type groupby struct {
-	column string
-	having SQLer
-}
-
-func GroupBy(column string, having SQLer) SQLer {
-	return groupby{
-		column: column,
-		having: having,
+	if len(s.groupby) > 0 {
+		b.WriteString(" GROUP BY ")
+		for i, by := range s.groupby {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+			sql, as, err := by.SQL()
+			if err != nil {
+				return "", nil, err
+			}
+			args = append(args, as...)
+			b.WriteString(sql)
+		}
+    if s.having != nil {
+      b.WriteString(" HAVING ")
+      sql, as, err := s.having.SQL()
+      if err != nil {
+        return "", nil, er
+      }
+      args = append(args, as...)
+      b.WriteString(sql)
+    }
 	}
-}
-
-func (g groupby) SQL() (string, []interface{}, error) {
-	return "", nil, nil
+	if len(s.orderby) > 0 {
+		b.WriteString(" ORDER BY ")
+		for i, by := range s.orderby {
+			if i > 0 {
+				b.WriteString(", ")
+			}
+			sql, as, err := by.SQL()
+			if err != nil {
+				return "", nil, err
+			}
+			args = append(args, as...)
+			b.WriteString(sql)
+		}
+	}
+	if s.limit > 0 {
+		b.WriteString(" LIMIT ")
+		b.WriteString(strconv.Itoa(s.limit))
+	}
+	if s.offset > 0 {
+		b.WriteString(" OFFSET ")
+		b.WriteString(strconv.Itoa(s.offset))
+	}
+	return b.String(), args, nil
 }
 
 type orderby struct {
