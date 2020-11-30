@@ -17,6 +17,10 @@ func TestDelete(t *testing.T) {
 		Args    []interface{}
 	}{
 		{
+			Table: "users",
+			Want:  "DELETE FROM users",
+		},
+		{
 			Options: []DeleteOption{
 				DeleteWhere(Equal(NewIdent("role"), NewLiteral("admin"))),
 			},

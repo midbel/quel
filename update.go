@@ -7,11 +7,12 @@ import (
 
 type UpdateOption func(*Update) error
 
-func UpdateColumn(col SQLer) UpdateOption {
+func UpdateColumn(ident string, value SQLer) UpdateOption {
 	return func(u *Update) error {
-		if col != nil {
-			u.columns = append(u.columns, col)
+		if !isValidIdentifier(ident) {
+			return fmt.Errorf("update: %w %q", ErrIdent, ident)
 		}
+		u.columns = append(u.columns, Equal(NewIdent(ident), value))
 		return nil
 	}
 }
@@ -55,6 +56,9 @@ func NewUpdate(table string, options ...UpdateOption) (Update, error) {
 		if err = opt(&u); err != nil {
 			break
 		}
+	}
+	if len(u.columns) == 0 {
+		return u, fmt.Errorf("%w: no columns to update", ErrSyntax)
 	}
 	return u, err
 }
