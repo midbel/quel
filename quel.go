@@ -234,6 +234,9 @@ func isValidIdentifier(ident string) bool {
 var keywords = []string{}
 
 func isKeyword(str string) bool {
+	if len(keywords) == 0 {
+		return false
+	}
 	x := sort.SearchStrings(keywords, strings.ToUpper(str))
 	return x < len(keywords) && keywords[x] == strings.ToUpper(str)
 }

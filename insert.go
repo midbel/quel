@@ -10,6 +10,9 @@ type InsertOption func(*Insert) error
 func InsertColumns(columns ...string) InsertOption {
 	return func(i *Insert) error {
 		for _, c := range columns {
+			if !isValidIdentifier(c) {
+				return fmt.Errorf("column: %w %q", ErrIdent, c)
+			}
 			i.columns = append(i.columns, NewIdent(c))
 		}
 		return nil
@@ -18,6 +21,9 @@ func InsertColumns(columns ...string) InsertOption {
 
 func InsertValues(values ...SQLer) InsertOption {
 	return func(i *Insert) error {
+		if len(values) == 0 {
+			return fmt.Errorf("values: no values given")
+		}
 		i.values = append(i.values, values)
 		return nil
 	}
@@ -39,6 +45,9 @@ func NewInsert(table string, options ...InsertOption) (Insert, error) {
 		if err = opt(&i); err != nil {
 			break
 		}
+	}
+	if len(i.values) == 0 {
+		return i, fmt.Errorf("%w: no values given to be inserted", ErrSyntax)
 	}
 	return i, err
 }
@@ -74,7 +83,7 @@ func (i Insert) SQL() (string, []interface{}, error) {
 	}
 	b.WriteString(" VALUES ")
 	for j, vs := range i.values {
-		if len(vs) != len(i.columns) {
+		if len(i.columns) > 0 && len(vs) != len(i.columns) {
 			return "", nil, fmt.Errorf("insert: values mismatched number of columns")
 		}
 		if j > 0 {
