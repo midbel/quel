@@ -182,6 +182,16 @@ func (a arg) SQL() (string, []interface{}, error) {
 	return "?", []interface{}{a.value}, nil
 }
 
+type raw string
+
+func Raw(sql string) SQLer {
+	return raw(sql)
+}
+
+func (r raw) SQL() (string, []interface{}, error) {
+	return string(r), nil, nil
+}
+
 func writeSQL(b io.StringWriter, parts ...SQLer) ([]interface{}, error) {
 	var args []interface{}
 	for i, s := range parts {

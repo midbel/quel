@@ -123,7 +123,7 @@ const (
 
 var joinops = map[jointype]string{
 	none:       "",
-	innerLeft:  "LEFT INNER JOIN",
+	innerLeft:  "INNER JOIN",
 	innerRight: "RIGHT INNER JOIN",
 	outerLeft:  "LEFT OUTER JOIN",
 	outerRight: "RIGHT OUTER JOIN",

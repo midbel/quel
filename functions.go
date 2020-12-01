@@ -55,3 +55,7 @@ func Min(column SQLer) SQLer {
 func Max(column SQLer) SQLer {
 	return Func("MAX", column)
 }
+
+func IsNull(expr SQLer) SQLer {
+	return Func("ISNULL", expr)
+}
