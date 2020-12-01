@@ -36,6 +36,10 @@ func Count(ident SQLer) SQLer {
 	return Func("COUNT", ident)
 }
 
+func Sum(ident SQLer) SQLer {
+	return Func("SUM", ident)
+}
+
 func Coalesce(values ...SQLer) SQLer {
 	return Func("COALESCE", values...)
 }

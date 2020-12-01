@@ -16,6 +16,8 @@ const (
 	notlike
 	in
 	notin
+	isnull
+	isnotnull
 )
 
 var cmpops = map[uint8]string{
@@ -29,6 +31,8 @@ var cmpops = map[uint8]string{
 	notlike: "NOT LIKE",
 	in:      "IN",
 	notin:   "NOT IN",
+	isnull:  "IS NULL",
+	isnotnull: "IS NOT NULL",
 }
 
 type compare struct {
@@ -117,6 +121,20 @@ func NotIn(left, right SQLer) SQLer {
 	}
 }
 
+func IsNullTest(left SQLer) SQLer {
+	return compare{
+		left: left,
+		op: isnull,
+	}
+}
+
+func IsNotNullTest(left SQLer) SQLer {
+	return compare{
+		left: left,
+		op: isnotnull,
+	}
+}
+
 func (c compare) SQL() (string, []interface{}, error) {
 	var args []interface{}
 	left, as, err := c.left.SQL()
@@ -124,6 +142,10 @@ func (c compare) SQL() (string, []interface{}, error) {
 		return "", nil, err
 	}
 	args = append(args, as...)
+
+	if c.op == isnull || c.op == isnotnull {
+		return fmt.Sprintf("%s %s", left, cmpops[c.op]), args, nil
+	}
 
 	right, as, err := c.right.SQL()
 	if err != nil {
