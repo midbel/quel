@@ -42,96 +42,58 @@ type compare struct {
 }
 
 func Equal(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    equal,
-	}
+	return newCompare(equal, left, right)
 }
 
 func NotEqual(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    noteq,
-	}
+	return newCompare(noteq, left, right)
 }
 
 func LesserThan(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    less,
-	}
+	return newCompare(less, left, right)
 }
 
 func LesserOrEqual(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    lesseq,
-	}
+	return newCompare(lesseq, left, right)
 }
 
 func GreaterThan(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    great,
-	}
+	return newCompare(great, left, right)
 }
 
 func GreaterOrEqual(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    greateq,
-	}
+	return newCompare(greateq, left, right)
 }
 
 func Like(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    like,
-	}
+	return newCompare(like, left, right)
 }
 
 func NotLike(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    notlike,
-	}
+	return newCompare(notlike, left, right)
 }
 
 func In(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    in,
-	}
+	return newCompare(in, left, right)
 }
 
 func NotIn(left, right SQLer) SQLer {
-	return compare{
-		left:  left,
-		right: right,
-		op:    notin,
-	}
+	return newCompare(notin, left, right)
 }
 
 func IsNullTest(left SQLer) SQLer {
-	return compare{
-		left: left,
-		op:   isnull,
-	}
+	return newCompare(isnull, left, nil)
 }
 
 func IsNotNullTest(left SQLer) SQLer {
+	return newCompare(isnotnull, left, nil)
+}
+
+func newCompare(op uint8, left, right SQLer) SQLer {
 	return compare{
 		left: left,
-		op:   isnotnull,
+		right: right,
+		op: op,
 	}
 }
 

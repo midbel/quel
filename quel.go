@@ -11,6 +11,10 @@ import (
 	"unicode/utf8"
 )
 
+func init() {
+	sort.Strings(keywords)
+}
+
 var (
 	ErrIdent  = errors.New("invalid identifier")
 	ErrLimit  = errors.New("negative limit")
@@ -37,6 +41,10 @@ func NewIdent(name string, parents ...string) SQLer {
 		name:    name,
 		parents: append([]string{}, parents...),
 	}
+}
+
+func (i ident) Alias(name string) SQLer {
+	return Alias(name, i)
 }
 
 func (i ident) SQL() (string, []interface{}, error) {
@@ -86,6 +94,10 @@ func NewList(parts ...SQLer) SQLer {
 	return list{
 		parts: append([]SQLer{}, parts...),
 	}
+}
+
+func (i list) Alias(name string) SQLer {
+	return Alias(name, i)
 }
 
 func (i list) SQL() (string, []interface{}, error) {
@@ -188,6 +200,10 @@ func Raw(sql string) SQLer {
 	return raw(sql)
 }
 
+func (r raw) Alias(name string) SQLer {
+	return Alias(name, r)
+}
+
 func (r raw) SQL() (string, []interface{}, error) {
 	return string(r), nil, nil
 }
@@ -241,34 +257,74 @@ func isValidIdentifier(ident string) bool {
 		c, _ = utf8.DecodeRuneInString(ident[z:])
 		return c == utf8.RuneError
 	default:
-		if isKeyword(ident) {
-			return false
-		}
-		if !isLetter(c) {
-			return false
-		}
-		z = 0
-		for {
-			k, x := utf8.DecodeRuneInString(ident[z:])
-			if k == utf8.RuneError && x == 0 {
-				break
-			}
-			if !isIdent(k) && k != dot {
-				return false
-			}
-			z += x
-		}
-		return true
+		return isValidLiteralString(ident)
 	}
 }
 
-var keywords = []string{}
+func isValidQuotedString(ident string) bool {
+	return false
+}
+
+func isValidLiteralString(ident string) bool {
+	if isKeyword(ident) {
+		return false
+	}
+	c, z := utf8.DecodeRuneInString(ident)
+	if !isLetter(c) {
+		return false
+	}
+	z = 0
+	for {
+		k, x := utf8.DecodeRuneInString(ident[z:])
+		if k == utf8.RuneError && x == 0 {
+			break
+		}
+		if !isIdent(k) && k != dot {
+			return false
+		}
+		z += x
+	}
+	return true
+}
+
+var keywords = []string{
+	"select",
+	"from",
+	"update",
+	"set",
+	"with",
+	"insert into",
+	"values",
+	"delete from",
+	"asc",
+	"desc",
+	"inner join",
+	"right inner join",
+	"left outer join",
+	"right outer join",
+	"where",
+	"having",
+	"group by",
+	"order by",
+	"limit",
+	"offset",
+	"not",
+	"not in",
+	"in",
+	"not between",
+	"between",
+	"not like",
+	"like",
+	"is not null",
+	"is null",
+	"null",
+}
 
 func isKeyword(str string) bool {
 	if len(keywords) == 0 {
 		return false
 	}
-	x := sort.SearchStrings(keywords, strings.ToUpper(str))
+	x := sort.SearchStrings(keywords, strings.ToLower(str))
 	return x < len(keywords) && keywords[x] == strings.ToUpper(str)
 }
 

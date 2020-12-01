@@ -16,6 +16,10 @@ func Func(name string, args ...SQLer) SQLer {
 	}
 }
 
+func (f function) Alias(name string) SQLer {
+	return Alias(name, f)
+}
+
 func (f function) SQL() (string, []interface{}, error) {
 	var (
 		b    strings.Builder
