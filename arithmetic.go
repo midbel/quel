@@ -5,6 +5,72 @@ import (
 )
 
 const (
+	micros uint8 = iota
+	millis
+	second
+	minute
+	hour
+	day
+	week
+	year
+)
+
+var durations = map[uint8]string{
+	micros: "",
+	millis: "",
+	second: "",
+	minute: "",
+	hour:   "",
+	day:    "",
+	week:   "",
+	year:   "",
+}
+
+type duration struct {
+	unit uint8
+	wait int
+}
+
+func Seconds(d int) SQLer {
+	return newDuration(d, second)
+}
+
+func Minutes(d int) SQLer {
+	return newDuration(d, minute)
+}
+
+func Hours(d int) SQLer {
+	return newDuration(d, hour)
+}
+
+func Days(d int) SQLer {
+	return newDuration(d, day)
+}
+
+func Weeks(d int) SQLer {
+	return newDuration(d, week)
+}
+
+func Years(d int) SQLer {
+	return newDuration(d, year)
+}
+
+func newDuration(d int, unit uint8) SQLer {
+	return duration{
+		unit: unit,
+		wait: d,
+	}
+}
+
+func (d duration) SQL() (string, []interface{}, error) {
+	unit, ok := durations[d.unit]
+	if !ok {
+		return "", nil, fmt.Errorf("unsupported duration")
+	}
+	return fmt.Sprintf("INTERVAL %d %s", d.wait, unit), nil, nil
+}
+
+const (
 	add uint8 = iota
 	sub
 	mul
