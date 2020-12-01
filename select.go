@@ -155,13 +155,13 @@ func isJoinable(sql SQLer) bool {
 }
 
 type Select struct {
-	queries []query
-	where   SQLer
-	orderby []SQLer
-	groupby []SQLer
-	having  SQLer
-	limit   int
-	offset  int
+	queries  []query
+	where    SQLer
+	orderby  []SQLer
+	groupby  []SQLer
+	having   SQLer
+	limit    int
+	offset   int
 	distinct bool
 }
 

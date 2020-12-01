@@ -21,17 +21,17 @@ const (
 )
 
 var cmpops = map[uint8]string{
-	equal:   "=",
-	noteq:   "<>",
-	less:    "<",
-	lesseq:  "<=",
-	great:   ">",
-	greateq: ">=",
-	like:    "LIKE",
-	notlike: "NOT LIKE",
-	in:      "IN",
-	notin:   "NOT IN",
-	isnull:  "IS NULL",
+	equal:     "=",
+	noteq:     "<>",
+	less:      "<",
+	lesseq:    "<=",
+	great:     ">",
+	greateq:   ">=",
+	like:      "LIKE",
+	notlike:   "NOT LIKE",
+	in:        "IN",
+	notin:     "NOT IN",
+	isnull:    "IS NULL",
 	isnotnull: "IS NOT NULL",
 }
 
@@ -124,14 +124,14 @@ func NotIn(left, right SQLer) SQLer {
 func IsNullTest(left SQLer) SQLer {
 	return compare{
 		left: left,
-		op: isnull,
+		op:   isnull,
 	}
 }
 
 func IsNotNullTest(left SQLer) SQLer {
 	return compare{
 		left: left,
-		op: isnotnull,
+		op:   isnotnull,
 	}
 }
 

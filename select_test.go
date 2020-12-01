@@ -21,7 +21,7 @@ func testJoinSelect(t *testing.T) {
 		return
 	}
 	const (
-		ileft  = "SELECT u.id, u.first, u.last, p.id, p.name FROM users AS u LEFT INNER JOIN positions AS p ON u.id = p.user"
+		ileft  = "SELECT u.id, u.first, u.last, p.id, p.name FROM users AS u INNER JOIN positions AS p ON u.id = p.user"
 		iright = "SELECT u.id, u.first, u.last, p.id, p.name FROM users AS u RIGHT INNER JOIN positions AS p ON u.id = p.user"
 		oleft  = "SELECT u.id, u.first, u.last, p.id, p.name FROM users AS u LEFT OUTER JOIN positions AS p ON u.id = p.user"
 		oright = "SELECT u.id, u.first, u.last, p.id, p.name FROM users AS u RIGHT OUTER JOIN positions AS p ON u.id = p.user"
