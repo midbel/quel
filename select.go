@@ -111,6 +111,13 @@ func SelectWhere(where SQLer) SelectOption {
 	}
 }
 
+func SelectDistinct() SelectOption {
+	return func(q *Select) error {
+		q.distinct = true
+		return nil
+	}
+}
+
 type jointype uint8
 
 const (
@@ -155,6 +162,7 @@ type Select struct {
 	having  SQLer
 	limit   int
 	offset  int
+	distinct bool
 }
 
 func NewSelect(table string, options ...SelectOption) (Select, error) {
@@ -172,6 +180,14 @@ func NewSelect(table string, options ...SelectOption) (Select, error) {
 		}
 	}
 	return base, err
+}
+
+func NewDistinct(table string, options ...SelectOption) (Select, error) {
+	q, err := NewSelect(table, options...)
+	if err == nil {
+		q.distinct = true
+	}
+	return q, err
 }
 
 func (s Select) LeftInnerJoin(source, cdt SQLer, options ...SelectOption) (Select, error) {
@@ -228,6 +244,9 @@ func (s Select) SQL() (string, []interface{}, error) {
 		args []interface{}
 	)
 	b.WriteString("SELECT ")
+	if s.distinct {
+		b.WriteString("DISTINCT ")
+	}
 	for i, q := range s.queries {
 		if len(q.columns) == 0 {
 			b.WriteString("*")
