@@ -91,9 +91,9 @@ func IsNotNullTest(left SQLer) SQLer {
 
 func newCompare(op uint8, left, right SQLer) SQLer {
 	return compare{
-		left: left,
+		left:  left,
 		right: right,
-		op: op,
+		op:    op,
 	}
 }
 

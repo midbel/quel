@@ -6,24 +6,24 @@ import (
 
 const (
 	micros uint8 = iota
-	millis
 	second
 	minute
 	hour
 	day
 	week
+	month
 	year
 )
 
 var durations = map[uint8]string{
-	micros: "",
-	millis: "",
-	second: "",
-	minute: "",
-	hour:   "",
-	day:    "",
-	week:   "",
-	year:   "",
+	micros: "MICROSECOND",
+	second: "SECOND",
+	minute: "MINUTE",
+	hour:   "HOUR",
+	day:    "DAY",
+	week:   "WEEK",
+	month: "MONTH",
+	year:   "YEAR",
 }
 
 type duration struct {
@@ -49,6 +49,10 @@ func Days(d int) SQLer {
 
 func Weeks(d int) SQLer {
 	return newDuration(d, week)
+}
+
+func Months(d int) SQLer {
+	return newDuration(d, month)
 }
 
 func Years(d int) SQLer {

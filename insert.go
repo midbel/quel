@@ -29,10 +29,18 @@ func InsertValues(values ...SQLer) InsertOption {
 	}
 }
 
+func InsertReturn(values ...SQLer) InsertOption {
+	return func(i *Insert) error {
+		i.returning = append(i.returning, values...)
+		return nil
+	}
+}
+
 type Insert struct {
-	table   SQLer
-	columns []SQLer
-	values  [][]SQLer
+	table     SQLer
+	columns   []SQLer
+	values    [][]SQLer
+	returning []SQLer
 }
 
 func NewInsert(table string, options ...InsertOption) (Insert, error) {
@@ -87,6 +95,14 @@ func (i Insert) SQL() (string, []interface{}, error) {
 		}
 		args = append(args, as...)
 		b.WriteString(")")
+	}
+	if i.returning != nil {
+		b.WriteString(" RETURNING ")
+		as, err := writeSQL(&b, i.returning...)
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
 	}
 	return b.String(), args, nil
 }

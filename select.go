@@ -118,6 +118,21 @@ func SelectDistinct() SelectOption {
 	}
 }
 
+func SelectWith(name string, query Select, columns ...SQLer) SelectOption {
+	return func(q *Select) error {
+		if !isValidIdentifier(name) {
+			return fmt.Errorf("with: %w %q", ErrIdent, name)
+		}
+		c := cte{
+			name:    name,
+			inner:   query,
+			columns: append([]SQLer{}, columns...),
+		}
+		q.ctes = append(q.ctes, c)
+		return nil
+	}
+}
+
 type jointype uint8
 
 const (
@@ -134,6 +149,38 @@ var joinops = map[jointype]string{
 	innerRight: "RIGHT INNER JOIN",
 	outerLeft:  "LEFT OUTER JOIN",
 	outerRight: "RIGHT OUTER JOIN",
+}
+
+type cte struct {
+	name    string
+	inner   SQLer
+	columns []SQLer
+}
+
+func (c cte) SQL() (string, []interface{}, error) {
+	var (
+		b strings.Builder
+		args []interface{}
+	)
+	b.WriteString(c.name)
+	b.WriteString("(")
+	as, err := writeSQL(&b, c.columns...)
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, as...)
+	b.WriteString(")")
+	b.WriteString(" AS ")
+	b.WriteString("(")
+	sql, as, err := c.inner.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, as...)
+	b.WriteString(sql)
+	b.WriteString(")")
+
+	return b.String(), args, nil
 }
 
 type query struct {
@@ -155,6 +202,7 @@ func isJoinable(sql SQLer) bool {
 }
 
 type Select struct {
+	ctes     []SQLer
 	queries  []query
 	where    SQLer
 	orderby  []SQLer
@@ -183,11 +231,8 @@ func NewSelect(table string, options ...SelectOption) (Select, error) {
 }
 
 func NewDistinct(table string, options ...SelectOption) (Select, error) {
-	q, err := NewSelect(table, options...)
-	if err == nil {
-		q.distinct = true
-	}
-	return q, err
+	options = append(options, SelectDistinct())
+	return NewSelect(table, options...)
 }
 
 func (s Select) LeftInnerJoin(source, cdt SQLer, options ...SelectOption) (Select, error) {
@@ -210,12 +255,10 @@ func (s Select) join(jt jointype, source, cdt SQLer, options ...SelectOption) (S
 	if !isJoinable(source) {
 		return s, fmt.Errorf("%w: source can not be joined!", ErrSyntax)
 	}
-	if cdt != nil {
-		switch cdt.(type) {
-		case compare, and, or, list:
-		default:
-			return s, fmt.Errorf("%w: invalid condition type", ErrSyntax)
-		}
+	switch cdt.(type) {
+	case compare, and, or, list:
+	default:
+		return s, fmt.Errorf("%w: invalid condition type", ErrSyntax)
 	}
 	var (
 		base Select
@@ -227,6 +270,7 @@ func (s Select) join(jt jointype, source, cdt SQLer, options ...SelectOption) (S
 	q.join = jt
 
 	base = Select{
+		ctes:    append([]SQLer{}, s.ctes...),
 		queries: append([]query{}, s.queries...),
 	}
 	base.queries = append(base.queries, q)
@@ -238,11 +282,23 @@ func (s Select) join(jt jointype, source, cdt SQLer, options ...SelectOption) (S
 	return base, err
 }
 
+func (s Select) Exists() SQLer {
+	return Exists(s)
+}
+
 func (s Select) SQL() (string, []interface{}, error) {
 	var (
 		b    strings.Builder
 		args []interface{}
 	)
+	if len(s.ctes) > 0 {
+		b.WriteString("WITH ")
+		as, err := writeSQL(&b, s.ctes...)
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
+	}
 	b.WriteString("SELECT ")
 	if s.distinct {
 		b.WriteString("DISTINCT ")
@@ -337,6 +393,23 @@ func (s Select) SQL() (string, []interface{}, error) {
 		b.WriteString(strconv.Itoa(s.offset))
 	}
 	return b.String(), args, nil
+}
+
+type exist struct {
+	inner SQLer
+}
+
+func Exists(s SQLer) SQLer {
+	return exist{inner: s}
+}
+
+func (e exist) SQL() (string, []interface{}, error) {
+	var str string
+	sql, args, err := e.inner.SQL()
+	if err == nil {
+		str = fmt.Sprintf("EXISTS %s", sql)
+	}
+	return str, args, err
 }
 
 type orderby struct {

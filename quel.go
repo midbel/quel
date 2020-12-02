@@ -293,6 +293,7 @@ var keywords = []string{
 	"update",
 	"set",
 	"with",
+	"as",
 	"insert into",
 	"values",
 	"delete from",

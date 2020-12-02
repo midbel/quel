@@ -40,10 +40,18 @@ func UpdateAlias(alias string) UpdateOption {
 	}
 }
 
+func UpdateReturn(values ...SQLer) UpdateOption {
+	return func(u *Update) error {
+		u.returning = append(u.returning, values...)
+		return nil
+	}
+}
+
 type Update struct {
-	table   SQLer
-	columns []SQLer
-	where   SQLer
+	table     SQLer
+	columns   []SQLer
+	where     SQLer
+	returning []SQLer
 }
 
 func NewUpdate(table string, options ...UpdateOption) (Update, error) {
@@ -88,6 +96,14 @@ func (u Update) SQL() (string, []interface{}, error) {
 		}
 		args = append(args, as...)
 		b.WriteString(sql)
+	}
+	if u.returning != nil {
+		b.WriteString(" RETURNING ")
+		as, err := writeSQL(&b, u.returning...)
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
 	}
 	return b.String(), args, nil
 }

@@ -30,9 +30,17 @@ func DeleteAlias(alias string) DeleteOption {
 	}
 }
 
+func DeleteReturn(values ...SQLer) DeleteOption {
+	return func(d *Delete) error {
+		d.returning = append(d.returning, values...)
+		return nil
+	}
+}
+
 type Delete struct {
-	table SQLer
-	where SQLer
+	table     SQLer
+	where     SQLer
+	returning []SQLer
 }
 
 func NewDelete(table string, options ...DeleteOption) (Delete, error) {
@@ -69,6 +77,14 @@ func (d Delete) SQL() (string, []interface{}, error) {
 		}
 		args = append(args, as...)
 		b.WriteString(sql)
+	}
+	if d.returning != nil {
+		b.WriteString(" RETURNING ")
+		as, err := writeSQL(&b, d.returning...)
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
 	}
 	return b.String(), args, nil
 }
