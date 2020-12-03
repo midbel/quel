@@ -159,7 +159,7 @@ type cte struct {
 
 func (c cte) SQL() (string, []interface{}, error) {
 	var (
-		b strings.Builder
+		b    strings.Builder
 		args []interface{}
 	)
 	b.WriteString(c.name)
@@ -199,6 +199,10 @@ func isJoinable(sql SQLer) bool {
 	default:
 		return false
 	}
+}
+
+func Using(list ...SQLer) SQLer {
+	return NewList(list...)
 }
 
 type Select struct {
@@ -298,18 +302,19 @@ func (s Select) SQL() (string, []interface{}, error) {
 			return "", nil, err
 		}
 		args = append(args, as...)
+		b.WriteString(" ")
 	}
 	b.WriteString("SELECT ")
 	if s.distinct {
 		b.WriteString("DISTINCT ")
 	}
 	for i, q := range s.queries {
+		if i > 0 {
+			b.WriteString(", ")
+		}
 		if len(q.columns) == 0 {
 			b.WriteString("*")
 			continue
-		}
-		if i > 0 {
-			b.WriteString(", ")
 		}
 		as, err := writeSQL(&b, q.columns...)
 		if err != nil {
@@ -392,6 +397,75 @@ func (s Select) SQL() (string, []interface{}, error) {
 		b.WriteString(" OFFSET ")
 		b.WriteString(strconv.Itoa(s.offset))
 	}
+	return b.String(), args, nil
+}
+
+func (s Select) columnsCount() int {
+	var c int
+	for _, q := range s.queries {
+		c += len(q.columns)
+	}
+	return c
+}
+
+type union struct {
+	left  SQLer
+	right SQLer
+	all   bool
+}
+
+func Union(left, right SQLer) (SQLer, error) {
+	return newUnion(left, right, false)
+}
+
+func UnionAll(left, right SQLer) (SQLer, error) {
+	return newUnion(left, right, true)
+}
+
+func newUnion(left, right SQLer, all bool) (SQLer, error) {
+	fst, ok := left.(Select)
+	if !ok {
+		return nil, ErrSyntax
+	}
+	snd, ok := right.(Select)
+	if !ok {
+		return nil, ErrSyntax
+	}
+	if fst.columnsCount() != snd.columnsCount() {
+		return nil, fmt.Errorf("%w(union): columns count mismatch", ErrSyntax)
+	}
+	u := union{
+		left:  left,
+		right: right,
+		all:   all,
+	}
+	return u, nil
+}
+
+func (u union) SQL() (string, []interface{}, error) {
+	var (
+		b    strings.Builder
+		args []interface{}
+	)
+	left, as, err := u.left.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, as...)
+	b.WriteString(left)
+
+	b.WriteString(" UNION ")
+	if u.all {
+		b.WriteString("ALL ")
+	}
+
+	right, as, err := u.right.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	args = append(args, as...)
+	b.WriteString(right)
+
 	return b.String(), args, nil
 }
 

@@ -307,6 +307,119 @@ func (o or) SQL() (string, []interface{}, error) {
 	return b.String(), args, nil
 }
 
+type CaseOption func(k *kase) error
+
+func CaseAlternative(alt SQLer) CaseOption {
+	return func(k *kase) error {
+		if alt != nil {
+			k.alt = alt
+		}
+		return nil
+	}
+}
+
+func CaseWhen(test, csq SQLer) CaseOption {
+	return func(k *kase) error {
+		if test != nil && csq != nil {
+			k.test = append(k.test, test)
+			k.csq = append(k.csq, csq)
+		}
+		return nil
+	}
+}
+
+func CaseExpr(expr SQLer) CaseOption {
+	return func(k *kase) error {
+		if expr != nil {
+			k.expr = expr
+		}
+		return nil
+	}
+}
+
+type kase struct {
+	expr SQLer
+	test []SQLer
+	csq  []SQLer
+	alt  SQLer
+}
+
+func NewCase() SQLer {
+	return nil
+}
+
+func (k kase) SQL() (string, []interface{}, error) {
+	var (
+		b    strings.Builder
+		args []interface{}
+	)
+	b.WriteString("CASE ")
+	if k.expr != nil {
+		sql, as, err := k.expr.SQL()
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
+		b.WriteString(sql)
+		b.WriteString(" ")
+	}
+	for i := range k.test {
+		b.WriteString("WHEN ")
+		sql, as, err := k.test[i].SQL()
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
+		b.WriteString(sql)
+		b.WriteString(" THEN ")
+		sql, as, err = k.csq[i].SQL()
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
+		b.WriteString(sql)
+	}
+	if k.alt != nil {
+		b.WriteString(" ELSE ")
+		sql, as, err := k.alt.SQL()
+		if err != nil {
+			return "", nil, err
+		}
+		args = append(args, as...)
+		b.WriteString(sql)
+	}
+	b.WriteString(" END")
+	return b.String(), args, nil
+}
+
+func (k kase) Alias(name string) SQLer {
+	return Alias(name, k)
+}
+
+type any struct {
+	inner SQLer
+}
+
+func (a any) SQL() (string, []interface{}, error) {
+	sql, args, err := a.inner.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return fmt.Sprintf("ANY (%s)", sql), args, nil
+}
+
+type all struct {
+	inner SQLer
+}
+
+func (a all) SQL() (string, []interface{}, error) {
+	sql, args, err := a.inner.SQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return fmt.Sprintf("ALL (%s)", sql), args, nil
+}
+
 func acceptRelational(part SQLer) bool {
 	switch part.(type) {
 	case compare, and, or:

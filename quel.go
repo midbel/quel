@@ -319,6 +319,12 @@ var keywords = []string{
 	"is not null",
 	"is null",
 	"null",
+	"when",
+	"then",
+	"end",
+	"case",
+	"union",
+	"union all",
 }
 
 func isKeyword(str string) bool {

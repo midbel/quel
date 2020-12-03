@@ -22,7 +22,7 @@ var durations = map[uint8]string{
 	hour:   "HOUR",
 	day:    "DAY",
 	week:   "WEEK",
-	month: "MONTH",
+	month:  "MONTH",
 	year:   "YEAR",
 }
 
