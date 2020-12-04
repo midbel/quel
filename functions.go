@@ -67,3 +67,6 @@ func Max(column SQLer) SQLer {
 func IsNull(expr SQLer) SQLer {
 	return Func("ISNULL", expr)
 }
+func Date(expr SQLer) SQLer {
+	return Func("DATE", expr)
+}
