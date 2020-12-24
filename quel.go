@@ -130,6 +130,9 @@ func NewLiteral(value interface{}) SQLer {
 }
 
 func (i literal) SQL() (string, []interface{}, error) {
+	if i.value == nil {
+		return "null", nil, nil
+	}
 	var str string
 	switch val := i.value.(type) {
 	case int:
@@ -190,8 +193,12 @@ func (a arg) SQL() (string, []interface{}, error) {
 	if a.value == nil {
 		a.value = null
 	}
+	placeholder := "?"
+	if isNumeric(a.name) {
+		placeholder = fmt.Sprintf("$%s", a.name)
+	}
 	// return fmt.Sprintf("@%s", a.name), []interface{}{a.value}, nil
-	return "?", []interface{}{a.value}, nil
+	return placeholder, []interface{}{a.value}, nil
 }
 
 type raw string
@@ -325,6 +332,11 @@ var keywords = []string{
 	"case",
 	"union",
 	"union all",
+}
+
+func isNumeric(str string) bool {
+	_, err := strconv.Atoi(str)
+	return err == nil
 }
 
 func isKeyword(str string) bool {

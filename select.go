@@ -10,7 +10,7 @@ type SelectOption func(q *Select) error
 
 func SelectLimit(limit int) SelectOption {
 	return func(q *Select) error {
-		if limit <= 0 {
+		if limit < 0 {
 			return fmt.Errorf("limit: %w: %d", ErrLimit, limit)
 		}
 		q.limit = limit
@@ -20,7 +20,7 @@ func SelectLimit(limit int) SelectOption {
 
 func SelectOffset(offset int) SelectOption {
 	return func(q *Select) error {
-		if offset <= 0 {
+		if offset < 0 {
 			return fmt.Errorf("offset: %w: %d", ErrLimit, offset)
 		}
 		q.offset = offset
